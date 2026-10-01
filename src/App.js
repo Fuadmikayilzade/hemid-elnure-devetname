@@ -17,62 +17,30 @@ function ScratchCard({ src, alt, quote }) {
     canvas.width  = W;
     canvas.height = H;
 
-    // Soft light radial backdrop
-    const grad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) / 1.15);
-    grad.addColorStop(0, '#faf3e8');
-    grad.addColorStop(0.6, '#f3e6cc');
-    grad.addColorStop(1, '#ecd9b3');
+    // Elegant dark-brown gradient
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#3d2817');
+    grad.addColorStop(0.5, '#2c1810');
+    grad.addColorStop(1, '#1f1009');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // Scattered gold diamond texture
-    ctx.fillStyle = 'rgba(184,150,62,0.13)';
-    const step = 32;
-    for (let y = 12; y < H; y += step) {
-      const rowOffset = (Math.round(y / step) % 2) * (step / 2);
-      for (let x = 12; x < W; x += step) {
-        ctx.save();
-        ctx.translate(x + rowOffset, y);
-        ctx.rotate(Math.PI / 4);
-        ctx.fillRect(-3, -3, 6, 6);
-        ctx.restore();
-      }
-    }
-
-    // Double gold frame
-    ctx.strokeStyle = 'rgba(184,150,62,0.55)';
+    // Decorative gold border lines
+    ctx.strokeStyle = 'rgba(212,176,106,0.45)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(14.5, 14.5, W - 29, H - 29);
-    ctx.strokeStyle = 'rgba(184,150,62,0.28)';
-    ctx.strokeRect(20.5, 20.5, W - 41, H - 41);
+    ctx.strokeRect(12, 12, W - 24, H - 24);
+    ctx.strokeRect(18, 18, W - 36, H - 36);
 
-    const cy = H / 2 - 6;
-
-    // Flourish lines flanking the monogram
-    ctx.strokeStyle = 'rgba(184,150,62,0.7)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(W / 2 - 96, cy);
-    ctx.lineTo(W / 2 - 38, cy);
-    ctx.moveTo(W / 2 + 38, cy);
-    ctx.lineTo(W / 2 + 96, cy);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(W / 2 - 34, cy, 2.5, 0, Math.PI * 2);
-    ctx.arc(W / 2 + 34, cy, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(184,150,62,0.85)';
-    ctx.fill();
-
-    // Monogram
+    // Hint text
+    const fs1 = Math.max(16, Math.round(W * 0.048));
+    const fs2 = Math.max(11, Math.round(W * 0.03));
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#2c1810';
-    ctx.font = `400 42px 'Cormorant Garamond', Georgia, serif`;
-    ctx.fillText('H  &  E', W / 2, cy);
-
-    // Sub label
-    ctx.fillStyle = 'rgba(92,61,46,0.75)';
-    ctx.font = `11px 'Cinzel', serif`;
-    ctx.fillText('C I Z A R A Q   A Ç I N', W / 2, cy + 36);
+    ctx.fillStyle = '#e8c96d';
+    ctx.font = `italic ${fs1}px 'Cormorant Garamond', Georgia, serif`;
+    ctx.fillText('🤍  Barmağınızla cızın', W / 2, H / 2 - 10);
+    ctx.fillStyle = 'rgba(232,201,109,0.75)';
+    ctx.font = `300 ${fs2}px 'Lato', sans-serif`;
+    ctx.fillText('sözləri aşkar etmək üçün', W / 2, H / 2 + fs2 + 6);
   }, [revealed]);
 
   const checkPercent = useCallback(() => {
@@ -448,7 +416,7 @@ export default function App() {
           {/* Fixed scroll-down indicator — visible until the user starts scrolling */}
           {showScrollHint && (
             <div className="scroll-hint" aria-hidden="true">
-              <span className="scroll-hint-label">Sürüşdürün</span>
+              <span className="scroll-hint-label">Aşağı Sürüşdürün</span>
               <div className="scroll-hint-circle">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
                   <path d="M12 3v16M12 19l-7-7M12 19l7-7" stroke="currentColor" strokeWidth="2"
