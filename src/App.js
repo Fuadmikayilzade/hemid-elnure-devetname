@@ -6,6 +6,7 @@ function ScratchCard({ src, alt, quote }) {
   const canvasRef = useRef(null);
   const [revealed, setRevealed] = useState(false);
   const drawing = useRef(false);
+  const gesture = useRef(null); // { x, y, decided, isScroll }
 
   useEffect(() => {
     if (revealed) return;
@@ -74,18 +75,39 @@ function ScratchCard({ src, alt, quote }) {
   };
 
   const onStart = (e) => {
+    const t = e.touches ? e.touches[0] : e;
+    gesture.current = { x: t.clientX, y: t.clientY, decided: !e.touches, isScroll: false };
     drawing.current = true;
-    const p = getPos(e);
-    scratchAt(p.x, p.y);
+    // Mouse (no touches) always draws immediately — only touch needs direction-sniffing
+    if (!e.touches) {
+      const p = getPos(e);
+      scratchAt(p.x, p.y);
+    }
   };
   const onMove = (e) => {
     if (!drawing.current) return;
+    const g = gesture.current;
+
+    if (e.touches && g && !g.decided) {
+      // First real movement — decide once whether this is a page-scroll swipe
+      // (mostly vertical) or an actual scratch gesture (short / sideways).
+      const t = e.touches[0];
+      const dx = t.clientX - g.x;
+      const dy = t.clientY - g.y;
+      if (Math.abs(dx) + Math.abs(dy) < 6) return; // too small to tell yet
+      g.decided = true;
+      g.isScroll = Math.abs(dy) > Math.abs(dx) * 1.3;
+      if (g.isScroll) { drawing.current = false; return; } // let the page scroll
+    } else if (g && g.isScroll) {
+      return; // already decided this is a scroll — never start drawing mid-gesture
+    }
+
     e.preventDefault();
     const p = getPos(e);
     scratchAt(p.x, p.y);
     checkPercent();
   };
-  const onEnd = () => { drawing.current = false; checkPercent(); };
+  const onEnd = () => { drawing.current = false; gesture.current = null; checkPercent(); };
 
   return (
     <div className="scratch-wrap">

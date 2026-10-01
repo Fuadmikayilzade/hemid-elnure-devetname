@@ -315,7 +315,7 @@ body {
   max-width: 440px; margin: 0 auto 22px;
   border: 1px solid var(--border);
   overflow: hidden;
-  touch-action: none;
+  touch-action: pan-y;
 }
 .scratch-base-img {
   display: block; width: 100%;
