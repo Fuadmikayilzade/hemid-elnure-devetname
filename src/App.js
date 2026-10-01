@@ -18,30 +18,51 @@ function ScratchCard({ src, alt, quote }) {
     canvas.width  = W;
     canvas.height = H;
 
-    // Elegant dark-brown gradient
+    // Warm cream backdrop, matching the wax-seal envelope
     const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#3d2817');
-    grad.addColorStop(0.5, '#2c1810');
-    grad.addColorStop(1, '#1f1009');
+    grad.addColorStop(0, '#f2e4c8');
+    grad.addColorStop(1, '#e6d2a8');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // Decorative gold border lines
-    ctx.strokeStyle = 'rgba(212,176,106,0.45)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(12, 12, W - 24, H - 24);
-    ctx.strokeRect(18, 18, W - 36, H - 36);
+    const cx = W / 2, cy = H / 2;
+    const r = Math.min(W, H) * 0.25;
 
-    // Hint text
-    const fs1 = Math.max(16, Math.round(W * 0.048));
-    const fs2 = Math.max(11, Math.round(W * 0.03));
+    // Wax-seal medallion
+    ctx.save();
+    ctx.shadowColor = 'rgba(44,24,16,0.25)';
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    const seal = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+    seal.addColorStop(0, '#5a3824');
+    seal.addColorStop(1, '#2c1810');
+    ctx.fillStyle = seal;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(212,176,106,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r - 10, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Monogram inside the seal
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#e8c96d';
-    ctx.font = `italic ${fs1}px 'Cormorant Garamond', Georgia, serif`;
-    ctx.fillText('🤍  Barmağınızla cızın', W / 2, H / 2 - 10);
-    ctx.fillStyle = 'rgba(232,201,109,0.75)';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#d9b98a';
+    ctx.font = `400 ${Math.round(r * 0.62)}px 'Cormorant Garamond', Georgia, serif`;
+    ctx.fillText('H & E', cx, cy - 2);
+
+    // Hint text below the seal
+    const fs2 = Math.max(11, Math.round(W * 0.032));
+    ctx.fillStyle = '#5c3d2e';
+    ctx.font = `italic ${Math.max(15, Math.round(W * 0.044))}px 'Cormorant Garamond', Georgia, serif`;
+    ctx.fillText('🤍  Barmağınızla cızın', cx, cy + r + 34);
+    ctx.fillStyle = 'rgba(92,61,46,0.65)';
     ctx.font = `300 ${fs2}px 'Lato', sans-serif`;
-    ctx.fillText('sözləri aşkar etmək üçün', W / 2, H / 2 + fs2 + 6);
+    ctx.fillText('sözləri aşkar etmək üçün', cx, cy + r + 34 + fs2 + 8);
   }, [revealed]);
 
   const checkPercent = useCallback(() => {
@@ -52,7 +73,7 @@ function ScratchCard({ src, alt, quote }) {
     let transparent = 0;
     for (let i = 3; i < data.length; i += 4) { if (data[i] < 128) transparent++; }
     const pct = (transparent / (canvas.width * canvas.height)) * 100;
-    if (pct > 52) setRevealed(true);
+    if (pct > 32) setRevealed(true);
   }, []);
 
   const scratchAt = useCallback((x, y) => {
@@ -61,7 +82,7 @@ function ScratchCard({ src, alt, quote }) {
     const ctx = canvas.getContext('2d');
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(x, y, 30, 0, Math.PI * 2);
+    ctx.arc(x, y, 44, 0, Math.PI * 2);
     ctx.fill();
   }, [revealed]);
 
@@ -78,11 +99,10 @@ function ScratchCard({ src, alt, quote }) {
     const t = e.touches ? e.touches[0] : e;
     gesture.current = { x: t.clientX, y: t.clientY, decided: !e.touches, isScroll: false };
     drawing.current = true;
-    // Mouse (no touches) always draws immediately — only touch needs direction-sniffing
-    if (!e.touches) {
-      const p = getPos(e);
-      scratchAt(p.x, p.y);
-    }
+    // Always leave an immediate mark where the finger/cursor lands —
+    // direction-sniffing only kicks in once the gesture actually moves.
+    const p = getPos(e);
+    scratchAt(p.x, p.y);
   };
   const onMove = (e) => {
     if (!drawing.current) return;
@@ -294,6 +314,13 @@ export default function App() {
   const [showToggleHint, setShowToggleHint] = useState(true);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+
+  // iOS often never fires loadeddata/canplaythrough before the first tap
+  // (it defers video loading to save data) — don't let the spinner spin forever.
+  useEffect(() => {
+    const id = setTimeout(() => setVideoLoaded(true), 1500);
+    return () => clearTimeout(id);
+  }, []);
   const videoRef = useRef(null);
 
   useEffect(() => {
