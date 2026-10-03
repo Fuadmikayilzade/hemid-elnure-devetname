@@ -285,11 +285,17 @@ export default function App() {
   const audioRef = useRef(null);
   const [musicOn, setMusicOn] = useState(false);
 
-  // The <audio> tag autoplays MUTED from the instant the page loads (every
-  // browser allows muted autoplay, no interaction needed) — so by the time
-  // the visitor's very first tap/scroll/key happens, it's already perfectly
-  // in sync and we just need to unmute it. This feels instant, with zero
-  // play()-buffering delay at the moment of interaction.
+  // The <audio autoPlay muted> attribute should start silent playback the
+  // instant the page loads — every browser allows muted autoplay with no
+  // interaction. But some Android WebViews (WhatsApp/Instagram's in-app
+  // browser especially) don't honour the HTML attribute reliably, so we
+  // also kick it off from JS as a backup. Either way, by the time the
+  // visitor's first tap/scroll/key happens, audio is already rolling
+  // (muted) and we just flip the mute flag — instant, no play() delay.
+  useEffect(() => {
+    audioRef.current?.play().catch(() => {}); // still muted — always allowed
+  }, []);
+
   useEffect(() => {
     let done = false;
     const start = () => {
