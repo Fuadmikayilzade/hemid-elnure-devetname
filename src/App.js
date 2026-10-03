@@ -293,19 +293,26 @@ export default function App() {
   // visitor's first tap/scroll/key happens, audio is already rolling
   // (muted) and we just flip the mute flag — instant, no play() delay.
   useEffect(() => {
-    audioRef.current?.play().catch(() => {}); // still muted — always allowed
+    const a = audioRef.current;
+    if (!a) return;
+    a.muted = true; // set the DOM property directly — don't rely on the JSX attribute alone
+    a.play().catch(() => {}); // still muted — always allowed, every browser
   }, []);
 
   useEffect(() => {
     let done = false;
     const start = () => {
-      if (done || !audioRef.current) return;
+      const a = audioRef.current;
+      if (done || !a) return;
       done = true;
-      audioRef.current.muted = false;
-      audioRef.current.play().then(() => setMusicOn(true)).catch(() => {});
+      a.muted = false;
+      // Whether or not it was already silently playing, (re)issue play() —
+      // harmless if already playing, and covers the case where the earlier
+      // muted play() never actually took on this particular browser.
+      a.play().then(() => setMusicOn(true)).catch(() => setMusicOn(false));
       events.forEach(ev => window.removeEventListener(ev, start));
     };
-    const events = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
+    const events = ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown', 'scroll', 'wheel'];
     events.forEach(ev => window.addEventListener(ev, start, { passive: true }));
     return () => events.forEach(ev => window.removeEventListener(ev, start));
   }, []);
