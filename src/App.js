@@ -366,7 +366,7 @@ export default function App() {
                   <span>Elnurə</span>
                 </h1>
                 <div className="cloud-date">20 Noyabr 2026 · Cümə</div>
-                <div className="cloud-venue">Bağçalı Saray</div>
+                <div className="cloud-venue">Bağçalı Saray, Bakı şəhəri, Cəfər Xəndan 23C</div>
               </div>
             </div>
           </section>
