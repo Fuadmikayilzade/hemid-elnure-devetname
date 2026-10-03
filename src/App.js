@@ -304,54 +304,24 @@ function RSVPSection() {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [envOpen,   setEnvOpen]   = useState(false);
-  const [content,   setContent]   = useState(false);
   const [isDark,    setIsDark]    = useState(false);
   const [imgFading, setImgFading] = useState(false);
   const audioRef = useRef(null);
   const [musicOn, setMusicOn] = useState(false);
   const [showScrollHint, setShowScrollHint] = useState(true);
   const [showToggleHint, setShowToggleHint] = useState(true);
-  const [videoPlaying, setVideoPlaying] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
-
-  // iOS often never fires loadeddata/canplaythrough before the first tap
-  // (it defers video loading to save data) — don't let the spinner spin forever.
-  useEffect(() => {
-    const id = setTimeout(() => setVideoLoaded(true), 1500);
-    return () => clearTimeout(id);
-  }, []);
-  const videoRef = useRef(null);
 
   useEffect(() => {
-    if (!content) return;
     const id = setTimeout(() => setShowToggleHint(false), 3000);
     return () => clearTimeout(id);
-  }, [content]);
+  }, []);
 
   useEffect(() => {
-    if (!content) return;
     const id = setTimeout(() => setShowScrollHint(false), 4000);
     const onScroll = () => setShowScrollHint(false);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => { clearTimeout(id); window.removeEventListener('scroll', onScroll); };
-  }, [content]);
-
-  const handleEnvTap = () => {
-    if (videoPlaying) return;
-    setVideoPlaying(true);
-    const p = videoRef.current?.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(() => handleVideoEnd()); // couldn't play — don't get stuck
-    }
-    // Start the invitation's own music right away, using this same tap gesture
-    audioRef.current?.play().then(() => setMusicOn(true)).catch(() => {});
-  };
-
-  const handleVideoEnd = () => {
-    setEnvOpen(true);
-    setTimeout(() => setContent(true), 700);
-  };
+  }, []);
 
   const toggleTheme = useCallback(() => {
     setShowToggleHint(false);
@@ -380,47 +350,12 @@ export default function App() {
       <audio ref={audioRef} loop><source src="/music.mp3" type="audio/mpeg" /></audio>
 
       {/* Music btn — bottom right */}
-      {content && (
-        <button className="music-btn" onClick={toggleMusic} aria-label="Musiqi">
-          {musicOn ? '♪' : '♩'}
-        </button>
-      )}
-
-      {/* ── ENVELOPE — tap full screen to play the letter video ── */}
-      {!content && (
-        <div
-          className={`env-scene ${envOpen ? 'opening' : ''}`}
-          onClick={handleEnvTap}
-          style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/envelope-bg.jpg)` }}
-        >
-          <video
-            ref={videoRef}
-            src="/video.mp4"
-            playsInline
-            preload="auto"
-            webkit-playsinline="true"
-            className={`env-video ${videoPlaying ? 'active' : ''}`}
-            onLoadedData={() => setVideoLoaded(true)}
-            onCanPlayThrough={() => setVideoLoaded(true)}
-            onEnded={handleVideoEnd}
-            onError={handleVideoEnd}
-          />
-          {!videoLoaded && !videoPlaying && (
-            <div className="env-spinner-wrap"><div className="env-spinner" /></div>
-          )}
-          {!videoPlaying && videoLoaded && (
-            <div className="env-cta">
-              <span className="env-orn">✦</span>
-              <div className="env-label">Məktuba toxunun</div>
-              <span className="env-orn">✦</span>
-            </div>
-          )}
-        </div>
-      )}
+      <button className="music-btn" onClick={toggleMusic} aria-label="Musiqi">
+        {musicOn ? '♪' : '♩'}
+      </button>
 
       {/* ── INVITATION ── */}
-      {content && (
-        <div className="invitation">
+      <div className="invitation">
 
           {/* HERO */}
           <section className="hero-section">
@@ -535,10 +470,11 @@ export default function App() {
             <SR delay={120}>
               <div className="venue-card">
                 <div className="venue-img-wrap">
-                  <img src="/img5.jpg" alt="Şadlıq Sarayı" className="venue-img" />
+                  <img src="/venue-bagcali.png" alt="Bağçalı Saray" className="venue-img venue-img-contain" />
                 </div>
                 <div className="venue-info">
                   <div className="venue-name">Bağçalı Saray</div>
+                  <div className="venue-addr">Bakı şəhəri, Cəfər Xəndan 23C</div>
                   <div className="venue-time">20 Noyabr 2026 · Saat 18:00</div>
                   <div className="nav-label-top">Naviqasiya seçin</div>
                   <div className="nav-btns">
@@ -559,7 +495,6 @@ export default function App() {
           </SR>
 
         </div>
-      )}
     </div>
   );
 }

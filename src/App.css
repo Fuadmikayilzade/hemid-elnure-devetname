@@ -82,71 +82,6 @@ body {
 }
 .sr.sr-in { opacity: 1; transform: translateY(0); }
 
-/* ── ENVELOPE — tap full screen to play the letter video ─────────────────────*/
-.env-scene {
-  position: fixed; inset: 0; z-index: 300;
-  display: flex; align-items: center; justify-content: center;
-  background-color: #faf7f2;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  overflow: hidden;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: opacity .8s ease;
-}
-.opening.env-scene { opacity: 0; pointer-events: none; }
-
-.env-video {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: center;
-  opacity: 0;
-  transition: opacity .4s ease;
-}
-.env-video.active { opacity: 1; }
-
-.env-spinner-wrap {
-  position: absolute; inset: 0; z-index: 2;
-  display: flex; align-items: center; justify-content: center;
-}
-.env-spinner {
-  width: 30px; height: 30px;
-  border: 2px solid rgba(184,150,62,.25);
-  border-top-color: rgba(184,150,62,.85);
-  border-radius: 50%;
-  animation: envspin .85s linear infinite;
-}
-@keyframes envspin { to { transform: rotate(360deg); } }
-
-.env-cta {
-  position: absolute;
-  left: 50%; bottom: 10%;
-  transform: translateX(-50%);
-  z-index: 3;
-  display: flex; flex-direction: row; align-items: center; gap: 16px;
-  padding: 22px 32px;
-  background: rgba(250,247,242,0.2);
-  border: 1px solid rgba(44,24,16,0.6);
-  box-shadow: inset 0 0 0 4px rgba(44,24,16,0.12);
-  animation: pulse 2.4s ease-in-out infinite;
-}
-.env-cta::before, .env-cta::after {
-  content: '';
-  position: absolute; width: 16px; height: 16px;
-  border: 1px solid var(--brown);
-}
-.env-cta::before { top: -9px; left: -9px; border-right: none; border-bottom: none; }
-.env-cta::after  { bottom: -9px; right: -9px; border-left: none; border-top: none; }
-.env-orn { font-size: 15px; color: var(--brown); }
-.env-label {
-  font-family: var(--fd); font-size: clamp(20px, 5.5vw, 28px);
-  letter-spacing: .28em; text-transform: uppercase;
-  color: var(--brown);
-  white-space: nowrap;
-}
-@keyframes pulse  { 0%,100%{opacity:.7} 50%{opacity:1} }
-
 /* ── INVITATION ──────────────────────────────────────────────────────────────*/
 .invitation {
   position: relative; z-index: 1;
@@ -430,10 +365,12 @@ body {
 
 /* ── Venue ───────────────────────────────────────────────────────────────────*/
 .venue-card { border:1px solid var(--border); overflow:hidden; background:var(--surface); backdrop-filter:blur(8px); }
-.venue-img-wrap { overflow:hidden; }
+.venue-img-wrap { overflow:hidden; background: var(--cream); }
 .venue-img { width:100%; display:block; height:min(250px,50vw); object-fit:cover; }
+.venue-img-contain { object-fit: contain; padding: 10px 0; }
 .venue-info { padding:20px 18px; text-align:center; }
 .venue-name { font-family:var(--fd); font-size: 19px; font-weight:400; letter-spacing:.15em; color:var(--brown); margin-bottom:5px; }
+.venue-addr { font-family:var(--fb); font-size: 14px; color:var(--brown-mid); margin-bottom:8px; }
 .venue-time { font-family:var(--fb); font-style:italic; font-size: 17px; color:var(--gold); margin-bottom:18px; }
 .nav-label-top { font-family:var(--fs); font-size: 9px; letter-spacing:.4em; text-transform:uppercase; color:var(--brown-mid); opacity:.52; margin-bottom:11px; }
 .nav-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -443,7 +380,7 @@ body {
 /* ── Footer ──────────────────────────────────────────────────────────────────*/
 .inv-footer { text-align:center; padding:46px 24px 64px; border-top:1px solid var(--border); }
 .footer-flourish { font-size: 11px; color:var(--gold); opacity:.5; margin-bottom:18px; letter-spacing:.3em; }
-.footer-names { font-family:var(--fd); font-size: clamp(25px, 7vw, 37px); font-weight:400; letter-spacing:.15em; color:var(--brown); margin-bottom:9px; }
+.footer-names { font-family:'Alex Brush', cursive; font-size: clamp(38px, 10vw, 58px); font-weight:400; letter-spacing:.02em; color:var(--brown); margin-bottom:9px; }
 .footer-date { font-family:var(--fs); font-size: 11px; letter-spacing:.45em; text-transform:uppercase; color:var(--gold); opacity:.62; margin-bottom:13px; }
 .footer-verse { font-family:var(--fb); font-style:italic; font-size: 18px; color:var(--brown-mid); opacity:.68; }
 
