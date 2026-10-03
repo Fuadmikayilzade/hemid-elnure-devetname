@@ -6,7 +6,6 @@ function ScratchCard({ src, alt, quote }) {
   const canvasRef = useRef(null);
   const [revealed, setRevealed] = useState(false);
   const drawing = useRef(false);
-  const gesture = useRef(null); // { x, y, decided, isScroll }
 
   useEffect(() => {
     if (revealed) return;
@@ -18,51 +17,30 @@ function ScratchCard({ src, alt, quote }) {
     canvas.width  = W;
     canvas.height = H;
 
-    // Warm cream backdrop, matching the wax-seal envelope
+    // Simple, clean cream backdrop
     const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#f2e4c8');
-    grad.addColorStop(1, '#e6d2a8');
+    grad.addColorStop(0, '#f7ecd5');
+    grad.addColorStop(0.5, '#eddfc0');
+    grad.addColorStop(1, '#e8d5b0');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    const cx = W / 2, cy = H / 2;
-    const r = Math.min(W, H) * 0.25;
+    // Thin double border
+    ctx.strokeStyle = 'rgba(184,150,62,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(12, 12, W - 24, H - 24);
+    ctx.strokeRect(18, 18, W - 36, H - 36);
 
-    // Wax-seal medallion
-    ctx.save();
-    ctx.shadowColor = 'rgba(44,24,16,0.25)';
-    ctx.shadowBlur = 14;
-    ctx.shadowOffsetY = 4;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    const seal = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
-    seal.addColorStop(0, '#5a3824');
-    seal.addColorStop(1, '#2c1810');
-    ctx.fillStyle = seal;
-    ctx.fill();
-    ctx.restore();
-
-    ctx.strokeStyle = 'rgba(212,176,106,0.6)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r - 10, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Monogram inside the seal
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#d9b98a';
-    ctx.font = `400 ${Math.round(r * 0.62)}px 'Cormorant Garamond', Georgia, serif`;
-    ctx.fillText('H & E', cx, cy - 2);
-
-    // Hint text below the seal
+    // Hint text
+    const fs1 = Math.max(16, Math.round(W * 0.05));
     const fs2 = Math.max(11, Math.round(W * 0.032));
+    ctx.textAlign = 'center';
     ctx.fillStyle = '#5c3d2e';
-    ctx.font = `italic ${Math.max(15, Math.round(W * 0.044))}px 'Cormorant Garamond', Georgia, serif`;
-    ctx.fillText('🤍  Barmağınızla cızın', cx, cy + r + 34);
-    ctx.fillStyle = 'rgba(92,61,46,0.65)';
+    ctx.font = `italic ${fs1}px 'Cormorant Garamond', Georgia, serif`;
+    ctx.fillText('🤍  Barmağınızla cızın', W / 2, H / 2 - 10);
+    ctx.fillStyle = 'rgba(92,61,46,0.6)';
     ctx.font = `300 ${fs2}px 'Lato', sans-serif`;
-    ctx.fillText('sözləri aşkar etmək üçün', cx, cy + r + 34 + fs2 + 8);
+    ctx.fillText('sözləri aşkar etmək üçün', W / 2, H / 2 + fs1 * 0.2 + fs2 + 10);
   }, [revealed]);
 
   const checkPercent = useCallback(() => {
@@ -96,38 +74,18 @@ function ScratchCard({ src, alt, quote }) {
   };
 
   const onStart = (e) => {
-    const t = e.touches ? e.touches[0] : e;
-    gesture.current = { x: t.clientX, y: t.clientY, decided: !e.touches, isScroll: false };
     drawing.current = true;
-    // Always leave an immediate mark where the finger/cursor lands —
-    // direction-sniffing only kicks in once the gesture actually moves.
     const p = getPos(e);
     scratchAt(p.x, p.y);
   };
   const onMove = (e) => {
     if (!drawing.current) return;
-    const g = gesture.current;
-
-    if (e.touches && g && !g.decided) {
-      // First real movement — decide once whether this is a page-scroll swipe
-      // (mostly vertical) or an actual scratch gesture (short / sideways).
-      const t = e.touches[0];
-      const dx = t.clientX - g.x;
-      const dy = t.clientY - g.y;
-      if (Math.abs(dx) + Math.abs(dy) < 6) return; // too small to tell yet
-      g.decided = true;
-      g.isScroll = Math.abs(dy) > Math.abs(dx) * 1.3;
-      if (g.isScroll) { drawing.current = false; return; } // let the page scroll
-    } else if (g && g.isScroll) {
-      return; // already decided this is a scroll — never start drawing mid-gesture
-    }
-
     e.preventDefault();
     const p = getPos(e);
     scratchAt(p.x, p.y);
     checkPercent();
   };
-  const onEnd = () => { drawing.current = false; gesture.current = null; checkPercent(); };
+  const onEnd = () => { drawing.current = false; checkPercent(); };
 
   return (
     <div className="scratch-wrap">
@@ -308,6 +266,22 @@ export default function App() {
   const [imgFading, setImgFading] = useState(false);
   const audioRef = useRef(null);
   const [musicOn, setMusicOn] = useState(false);
+
+  // Browsers block audio.play() until the visitor interacts with the page at
+  // least once — there's no envelope-tap anymore, so catch the very first
+  // interaction anywhere (tap, click, scroll, key) and start the music then.
+  useEffect(() => {
+    let done = false;
+    const start = () => {
+      if (done) return;
+      done = true;
+      audioRef.current?.play().then(() => setMusicOn(true)).catch(() => {});
+      events.forEach(ev => window.removeEventListener(ev, start));
+    };
+    const events = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
+    events.forEach(ev => window.addEventListener(ev, start, { passive: true }));
+    return () => events.forEach(ev => window.removeEventListener(ev, start));
+  }, []);
   const [showScrollHint, setShowScrollHint] = useState(true);
   const [showToggleHint, setShowToggleHint] = useState(true);
 
@@ -433,7 +407,7 @@ export default function App() {
             <SR><h2 className="section-title">Dress Code</h2></SR>
             <SR delay={120}>
               <div className="dresscode-card">
-                <img src="/dresscode.jpg" alt="Dress Code" className="dc-img" />
+                <img src="/dresscode.png" alt="Dress Code" className="dc-img" />
                 <div className="dc-theme-line">Elegant · Classic · Refined</div>
                 <p className="dresscode-desc">
                   Bu xüsusi axşamın zərafətinə uyğun, zövqünüzə görə seçdiyiniz
