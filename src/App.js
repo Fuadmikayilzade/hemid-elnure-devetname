@@ -6,41 +6,58 @@ function ScratchCard({ src, alt, quote }) {
   const canvasRef = useRef(null);
   const [revealed, setRevealed] = useState(false);
   const drawing = useRef(false);
+  const hasScratched = useRef(false);
 
   useEffect(() => {
     if (revealed) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const W = canvas.offsetWidth  || canvas.parentElement.offsetWidth  || 340;
-    const H = canvas.offsetHeight || 420;
-    canvas.width  = W;
-    canvas.height = H;
 
-    // Simple, clean cream backdrop
-    const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#f7ecd5');
-    grad.addColorStop(0.5, '#eddfc0');
-    grad.addColorStop(1, '#e8d5b0');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+    const paint = () => {
+      if (hasScratched.current) return; // never redraw over the user's progress
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      if (W === 0 || H === 0) return; // not laid out yet — wait for the observer
+      canvas.width = W;
+      canvas.height = H;
 
-    // Thin double border
-    ctx.strokeStyle = 'rgba(184,150,62,0.35)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(12, 12, W - 24, H - 24);
-    ctx.strokeRect(18, 18, W - 36, H - 36);
+      // Simple, clean cream backdrop
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, '#f7ecd5');
+      grad.addColorStop(0.5, '#eddfc0');
+      grad.addColorStop(1, '#e8d5b0');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
 
-    // Hint text
-    const fs1 = Math.max(16, Math.round(W * 0.05));
-    const fs2 = Math.max(11, Math.round(W * 0.032));
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#5c3d2e';
-    ctx.font = `italic ${fs1}px 'Cormorant Garamond', Georgia, serif`;
-    ctx.fillText('🤍  Barmağınızla cızın', W / 2, H / 2 - 10);
-    ctx.fillStyle = 'rgba(92,61,46,0.6)';
-    ctx.font = `300 ${fs2}px 'Lato', sans-serif`;
-    ctx.fillText('sözləri aşkar etmək üçün', W / 2, H / 2 + fs1 * 0.2 + fs2 + 10);
+      // Thin double border
+      ctx.strokeStyle = 'rgba(184,150,62,0.35)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(12, 12, W - 24, H - 24);
+      ctx.strokeRect(18, 18, W - 36, H - 36);
+
+      // Hint text
+      const fs1 = Math.max(16, Math.round(W * 0.05));
+      const fs2 = Math.max(11, Math.round(W * 0.032));
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#5c3d2e';
+      ctx.font = `italic ${fs1}px 'Cormorant Garamond', Georgia, serif`;
+      ctx.fillText('🤍  Barmağınızla cızın', W / 2, H / 2 - 10);
+      ctx.fillStyle = 'rgba(92,61,46,0.6)';
+      ctx.font = `300 ${fs2}px 'Lato', sans-serif`;
+      ctx.fillText('sözləri aşkar etmək üçün', W / 2, H / 2 + fs1 * 0.2 + fs2 + 10);
+    };
+
+    paint();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(paint); // fonts can shift layout after first paint
+    }
+
+    // Re-measure whenever the canvas's actual on-screen size changes/settles —
+    // iOS in particular can report 0 or a stale size on the very first effect run.
+    const ro = new ResizeObserver(() => paint());
+    ro.observe(canvas);
+    return () => ro.disconnect();
   }, [revealed]);
 
   const checkPercent = useCallback(() => {
@@ -57,6 +74,7 @@ function ScratchCard({ src, alt, quote }) {
   const scratchAt = useCallback((x, y) => {
     const canvas = canvasRef.current;
     if (!canvas || revealed) return;
+    hasScratched.current = true;
     const ctx = canvas.getContext('2d');
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
@@ -267,15 +285,18 @@ export default function App() {
   const audioRef = useRef(null);
   const [musicOn, setMusicOn] = useState(false);
 
-  // Browsers block audio.play() until the visitor interacts with the page at
-  // least once — there's no envelope-tap anymore, so catch the very first
-  // interaction anywhere (tap, click, scroll, key) and start the music then.
+  // The <audio> tag autoplays MUTED from the instant the page loads (every
+  // browser allows muted autoplay, no interaction needed) — so by the time
+  // the visitor's very first tap/scroll/key happens, it's already perfectly
+  // in sync and we just need to unmute it. This feels instant, with zero
+  // play()-buffering delay at the moment of interaction.
   useEffect(() => {
     let done = false;
     const start = () => {
-      if (done) return;
+      if (done || !audioRef.current) return;
       done = true;
-      audioRef.current?.play().then(() => setMusicOn(true)).catch(() => {});
+      audioRef.current.muted = false;
+      audioRef.current.play().then(() => setMusicOn(true)).catch(() => {});
       events.forEach(ev => window.removeEventListener(ev, start));
     };
     const events = ['pointerdown', 'touchstart', 'keydown', 'scroll'];
@@ -321,7 +342,7 @@ export default function App() {
         {[...Array(14)].map((_, i) => <div key={i} className={`petal petal-${i}`} />)}
       </div>
 
-      <audio ref={audioRef} loop><source src="/music.mp3" type="audio/mpeg" /></audio>
+      <audio ref={audioRef} loop autoPlay muted playsInline><source src="/music.mp3" type="audio/mpeg" /></audio>
 
       {/* Music btn — bottom right */}
       <button className="music-btn" onClick={toggleMusic} aria-label="Musiqi">
