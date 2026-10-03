@@ -300,17 +300,20 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    let done = false;
+    let unlocked = false;
     const start = () => {
       const a = audioRef.current;
-      if (done || !a) return;
-      done = true;
+      if (unlocked || !a) return;
       a.muted = false;
-      // Whether or not it was already silently playing, (re)issue play() —
-      // harmless if already playing, and covers the case where the earlier
-      // muted play() never actually took on this particular browser.
-      a.play().then(() => setMusicOn(true)).catch(() => setMusicOn(false));
-      events.forEach(ev => window.removeEventListener(ev, start));
+      // Only treat this as "handled" once play() actually succeeds — Chrome
+      // doesn't count scroll/wheel as a real user gesture, so a play() fired
+      // from one of those gets silently rejected. If we removed the listeners
+      // right away regardless, a later *real* tap would never get a retry.
+      a.play().then(() => {
+        unlocked = true;
+        setMusicOn(true);
+        events.forEach(ev => window.removeEventListener(ev, start));
+      }).catch(() => { a.muted = true; }); // re-mute so it keeps silently looping until a real gesture lands
     };
     const events = ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown', 'scroll', 'wheel'];
     events.forEach(ev => window.addEventListener(ev, start, { passive: true }));
